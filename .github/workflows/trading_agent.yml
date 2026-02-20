@@ -25,8 +25,11 @@ jobs:
         run: pip install yfinance pandas google-generativeai requests googlesearch-python tqdm
 
       - name: Agent ausführen
+        - name: Agent ausführen
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python main.py
+        run: |
+          cd $GITHUB_WORKSPACE
+          python main.py
