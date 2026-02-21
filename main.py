@@ -21,7 +21,8 @@ def send_telegram_msg(message):
 
 # --- 2. MODUL 1: TICKER LADEN ---
 def get_global_tickers():
-    all_tickers = []
+    all_tickers.extend(["PNTX.DE", "PZNA.DE", "SZA.DE"]) # Korrekte Yahoo-Kürzel
+    return list(set(all_tickers))
     try:
         sp500 = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')[0]
         all_tickers.extend(sp500['Symbol'].str.replace('.', '-').tolist())
@@ -89,4 +90,17 @@ def run_logic():
     send_telegram_msg(heartbeat)
 
 if __name__ == "__main__":
-    run_logic()
+    if not TELEGRAM_TOKEN or not CHAT_ID or not GEMINI_KEY:
+        print("❌ Fehler: Secrets fehlen!")
+    else:
+        tickers = get_global_tickers()
+        finalists = technical_pre_screen(tickers)
+        
+        # TEST-MODUS FÜR DAS WOCHENENDE:
+        # Wenn die Liste leer ist (weil Wochenende), schicken wir einen Test-Heartbeat
+        if finalists.empty:
+            print("Keine echten Signale (Wochenende). Sende Test-Heartbeat...")
+            test_df = pd.DataFrame([{'Ticker': 'PNTX.DE', 'Price': 5.20, 'Rel_Vol': 2.5, 'RSL': 1.2}])
+            run_ai_and_notify(test_df, len(tickers))
+        else:
+            run_ai_and_notify(finalists, len(tickers))
