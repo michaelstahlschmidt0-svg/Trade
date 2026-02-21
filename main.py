@@ -12,8 +12,7 @@ CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 if GEMINI_KEY:
     genai.configure(api_key=GEMINI_KEY)
-    # Geänderte Modell-Initialisierung für bessere Kompatibilität
-    model = genai.GenerativeModel('models/gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-1.5-flash')
 
 def send_telegram_msg(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
@@ -27,30 +26,40 @@ def send_telegram_msg(message):
 # --- 2. LOGIK ---
 def run_logic():
     print("🚀 Starte Sentinel...")
-    
-    # Test-Ticker für das Wochenende
+    send_telegram_msg("🔔 *Sentinel Systemcheck*\nVerbindung erfolgreich hergestellt!")
+
+    # Test-Ticker
     tickers = ["PNTX.DE", "PZNA.DE", "SZA.DE"]
     
-    # Nachricht erzwingen (um 401 Fehler zu debuggen)
-    send_telegram_msg("🔔 *Sentinel Online*\nPrüfe Markt-Daten...")
-
     try:
-        data = yf.download(tickers, period="5d", interval="1d", progress=False)
-        # Wir nehmen einfach den ersten Ticker für einen KI-Test
-        ticker = tickers[0]
-        close_price = round(data['Close'][ticker].iloc[-1], 2)
+        # Lade Daten mit längerer Historie, um Wochenend-Lücken zu füllen
+        data = yf.download(tickers, period="1mo", interval="1d", progress=False)
         
-        prompt = f"Aktie {ticker} steht bei {close_price}€. Gib eine extrem kurze Einschätzung für 2026 (1 Satz)."
-        response = model.generate_content(prompt)
+        if data.empty or 'Close' not in data:
+            send_telegram_msg("⚠️ Keine Marktdaten verfügbar (Wochenende).")
+            return
+
+        # Sicherer Zugriff auf den letzten verfügbaren Preis
+        last_prices = data['Close'].ffill().iloc[-1]
         
-        final_msg = f"📈 *Update: {ticker}*\nPreis: {close_price}€\n🤖 KI: {response.text}"
-        send_telegram_msg(final_msg)
+        for ticker in tickers:
+            if ticker in last_prices:
+                price = round(last_prices[ticker], 2)
+                # KI-Analyse
+                prompt = f"Gib eine 1-Satz-Prognose für die Aktie {ticker} (Preis: {price}€) für das Jahr 2026."
+                try:
+                    response = model.generate_content(prompt)
+                    msg = f"📈 *Update: {ticker}*\nPreis: {price}€\n🤖 AI: {response.text}"
+                    send_telegram_msg(msg)
+                except:
+                    send_telegram_msg(f"📈 *Update: {ticker}*\nPreis: {price}€\n(KI-Dienst momentan überlastet)")
+                    
     except Exception as e:
-        print(f"Fehler in der Verarbeitung: {e}")
-        send_telegram_msg(f"⚠️ Fehler: {str(e)[:100]}")
+        print(f"Fehler: {e}")
+        send_telegram_msg(f"❌ System-Fehler: {str(e)[:50]}")
 
 if __name__ == "__main__":
-    if not TELEGRAM_TOKEN or not CHAT_ID or not GEMINI_KEY:
-        print("❌ Secrets fehlen in GitHub!")
+    if not TELEGRAM_TOKEN or not CHAT_ID:
+        print("❌ Telegram Konfiguration fehlt!")
     else:
         run_logic()
