@@ -23,10 +23,34 @@ def send_telegram_msg(message):
 
 # --- 2. TICKER-MASCHINE ---
 def get_tickers():
-    # Start mit deinen Favoriten
-    final_list = ["PNTX.DE", "PZNA.DE", "SZA.DE", "SAP.DE", "DTE.DE"]
+    # --- DEUTSCHE POWER-LISTE (ca. 100) ---
+    de_list = [
+        "PNTX.DE", "PZNA.DE", "SZA.DE", "SAP.DE", "SIE.DE", "DTE.DE", "AIR.DE", "ALV.DE", "MBG.DE", "BMW.DE",
+        "BAS.DE", "DHL.DE", "VOW3.DE", "BAYN.DE", "RHM.DE", "IFX.DE", "MRK.DE", "BEI.DE", "MTX.DE", "DB1.DE",
+        "CBK.DE", "DBK.DE", "ADS.DE", "HEI.DE", "CON.DE", "HEN3.DE", "SY1.DE", "VNA.DE", "EON.DE", "RWE.DE",
+        "DTG.DE", "MUV2.DE", "ZAL.DE", "HNR1.DE", "QIA.DE", "FRE.DE", "FME.DE", "SHL.DE", "BNR.DE", "KGX.DE",
+        "PUM.DE", "WDI.DE", "LEG.DE", "TAG.DE", "FRA.DE", "G1A.DE", "LHA.DE", "EVK.DE", "LAN.DE", "SDF.DE",
+        "HLE.DE", "TKWY.DE", "SYAB.DE", "AFX.DE", "HOT.DE", "NDX1.DE", "JEN.DE", "AIXA.DE", "SOW.DE", "EVT.DE",
+        "MOR.DE", "BOSS.DE", "BC8.DE", "WAF.DE", "FPE3.DE", "FNTN.DE", "BVB.DE", "TKA.DE", "GXI.DE", "UTDI.DE",
+        "1U1.DE", "SMHN.DE", "PBB.DE", "GFT.DE", "O2D.DE", "ADV.DE", "VAR1.DE", "ETL.DE", "LXS.DE", "JUN3.DE",
+        "KRN.DE", "GBF.DE", "HDD.DE", "AM3D.DE", "GLJ.DE", "PSM.DE", "NOEJ.DE", "AOX.DE", "HBH.DE", "DUE.DE"
+    ]
+
+    # --- US POWER-LISTE (50) ---
+    us_list = [
+        "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "BRK-B", "LLY", "AVGO",
+        "V", "JPM", "MA", "UNH", "HD", "PG", "COST", "NFLX", "ABBV", "ADBE",
+        "CRM", "ORCL", "AMD", "BAC", "PEP", "KO", "CVX", "XOM", "TMO", "WMT",
+        "DIS", "INTC", "CSCO", "VZ", "PFE", "NKE", "INTU", "QCOM", "TXN", "AMAT",
+        "ISRG", "BKNG", "MU", "PANW", "GILD", "LRCX", "SBUX", "PYPL", "SNPS", "CDNS"
+    ]
+
+    final_list = list(set(de_list + us_list))
+    
+    # Ab hier versuchen wir zusätzlich Wikipedia zu laden
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
     
+    # ... der Rest des Codes mit der for-Schleife über die indices folgt hier ...
     indices = {
         "DAX": "Liste_der_im_DAX_gelisteten_Unternehmen",
         "MDAX": "Liste_der_im_MDAX_gelisteten_Unternehmen",
