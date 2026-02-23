@@ -1,8 +1,12 @@
 name: Gemini Market Sentinel 2026
 
 on:
+  schedule:
+    # 08:30 UTC ist 09:30 Uhr deutsche Zeit
+    - cron: '30 8 * * 1-5'
+    # 15:00 UTC ist 16:00 Uhr deutsche Zeit
+    - cron: '0 15 * * 1-5'
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
