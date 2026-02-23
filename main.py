@@ -21,65 +21,78 @@ def send_telegram_msg(message):
         requests.post(url, json=payload, timeout=10)
     except: pass
 
-# --- 2. MODUL: TICKER & SCREENING ---
+# --- 2. TICKER-MASCHINE ---
 def get_tickers():
-    # Notfall-Liste + Deine Favoriten
-    all_tickers = ["PNTX.DE", "PZNA.DE", "SZA.DE", "SAP.DE", "DTE.DE"]
-    headers = {'User-Agent': 'Mozilla/5.0'}
-    for idx in ["DAX", "MDAX", "SDAX"]:
-        try:
-            url = f"https://de.wikipedia.org/wiki/Liste_der_im_{idx}_gelisteten_Unternehmen"
-            html = requests.get(url, headers=headers, timeout=10).text
-            tables = pd.read_html(html)
-            for df in tables:
-                col = next((c for c in df.columns if 'Symbol' in str(c) or 'Kürzel' in str(c)), None)
-                if col:
-                    all_tickers.extend([f"{s}.DE" for s in df[col].dropna().tolist() if ".DE" not in str(s)])
-                    break
-        except: continue
-    return list(set(all_tickers))
-
-def screen_market(tickers):
-    found = []
-    # Lade Daten für den letzten Monat
-    data = yf.download(tickers, period="60d", interval="1d", group_by='ticker', progress=False)
+    # Start mit deinen Favoriten
+    final_list = ["PNTX.DE", "PZNA.DE", "SZA.DE", "SAP.DE", "DTE.DE"]
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
     
-    for ticker in tickers:
+    indices = {
+        "DAX": "Liste_der_im_DAX_gelisteten_Unternehmen",
+        "MDAX": "Liste_der_im_MDAX_gelisteten_Unternehmen",
+        "SDAX": "Liste_der_im_SDAX_gelisteten_Unternehmen"
+    }
+
+    for name, path in indices.items():
+        try:
+            url = f"https://de.wikipedia.org/wiki/{path}"
+            resp = requests.get(url, headers=headers, timeout=15)
+            # Nutze StringIO um die Future-Warnung zu vermeiden
+            from io import StringIO
+            tables = pd.read_html(StringIO(resp.text))
+            
+            for df in tables:
+                # Suche Spalte mit "Symbol" oder "Kürzel"
+                col = next((c for c in df.columns if any(x in str(c) for x in ['Symbol', 'Kürzel', 'Ticker'])), None)
+                if col:
+                    found = df[col].dropna().astype(str).tolist()
+                    clean = [f"{s.split(':')[ -1].strip()}.DE" for s in found if len(s) < 10]
+                    final_list.extend(clean)
+                    print(f"✅ {name}: {len(clean)} Ticker geladen.")
+                    break
+        except Exception as e:
+            print(f"⚠️ Fehler bei {name}: {e}")
+
+    # Duplikate entfernen und leere Einträge filtern
+    return list(set([t for t in final_list if t and len(t) > 2]))
+
+# --- 3. SCREENER & RUN ---
+def run_sentinel():
+    print(f"🚀 Scan Start: {datetime.now()}")
+    all_tickers = get_tickers()
+    print(f"Gesamt-Pool: {len(all_tickers)} Aktien.")
+    
+    # Download Markt-Daten
+    data = yf.download(all_tickers, period="60d", interval="1d", group_by='ticker', progress=False)
+    
+    signals = []
+    for ticker in all_tickers:
         try:
             df = data[ticker].dropna()
             if len(df) < 30: continue
             
             close = df['Close'].iloc[-1]
-            # Volumen-Check: Heute vs. 20-Tage Durchschnitt
             avg_vol = df['Volume'].rolling(20).mean().iloc[-1]
             rel_vol = df['Volume'].iloc[-1] / avg_vol
-            # Trend-Check: Über dem 50-Tage Durchschnitt
             sma_50 = df['Close'].rolling(50).mean().iloc[-1]
             
-            # DIE FILTER-LOGIK (Nur starke Ausbrüche)
-            if rel_vol > 1.8 and close > sma_50:
-                found.append({'Ticker': ticker, 'Price': round(close, 2), 'Vol': round(rel_vol, 1)})
+            # Etwas lockerer für den ersten Live-Tag (1.5 statt 1.8)
+            if rel_vol > 1.5 and close > sma_50:
+                signals.append({'Ticker': ticker, 'Price': round(close, 2), 'Vol': round(rel_vol, 1)})
         except: continue
-    return found
 
-# --- 3. HAUPTLOGIK ---
-def run_sentinel():
-    print(f"🚀 Sentinel Scan Start: {datetime.now()}")
-    tickers = get_tickers()
-    signals = screen_market(tickers)
-    
+    # Nachrichten-Versand
     if signals:
         for s in signals:
-            prompt = f"Analysiere Aktie {s['Ticker']}. Warum könnte das Volumen heute {s['Vol']}x höher sein? Suche News 2026. 1 Satz."
             try:
+                prompt = f"Aktie {s['Ticker']} hat heute {s['Vol']}x normales Volumen. Warum? Suche News 2026. 1 Satz."
                 res = model.generate_content(prompt)
-                msg = f"🎯 *AUSBRUCH GEFUNDEN*\n\n📟 *Aktie:* {s['Ticker']}\n💰 *Preis:* {s['Price']}€\n📊 *Volumen:* {s['Vol']}x\n🤖 *KI:* {res.text}"
+                msg = f"🎯 *SIGNAL: {s['Ticker']}*\n💰 Preis: {s['Price']}€\n📊 Vol: {s['Vol']}x\n🤖 KI: {res.text}"
                 send_telegram_msg(msg)
             except: pass
     
-    # Der tägliche Heartbeat
-    heartbeat = f"✅ *Scan abgeschlossen*\n🔢 Geprüft: {len(tickers)} Aktien\n🎯 Signale: {len(signals)}"
-    send_telegram_msg(heartbeat)
+    # Abschlussbericht
+    send_telegram_msg(f"✅ *Sentinel Scan beendet*\n🔢 Geprüft: {len(all_tickers)} Aktien\n🎯 Signale: {len(signals)}")
 
 if __name__ == "__main__":
     run_sentinel()
