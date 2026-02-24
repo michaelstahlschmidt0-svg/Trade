@@ -30,11 +30,11 @@ def get_tickers():
         "VOW3.DE", "BAYN.DE", "RHM.DE", "IFX.DE", "MRK.DE", "BEI.DE", "MTX.DE", "DB1.DE", "CBK.DE", 
         "DBK.DE", "ADS.DE", "HEI.DE", "CON.DE", "HEN3.DE", "SY1.DE", "VNA.DE", "EOAN.DE", "RWE.DE", 
         "DTG.DE", "MUV2.DE", "ZAL.DE", "HNR1.DE", "QIA.DE", "FRE.DE", "FME.DE", "SHL.DE", "BNR.DE", 
-        "KGX.DE", "PUM.DE", "LEG.DE", "TOP.F", "FRA.DE", "G1A.DE", "LHA.DE", "EVK.DE","TKA.DE", 
+        "KGX.DE", "PUM.DE", "LEG.DE", "FRA.DE", "G1A.DE", "LHA.DE", "EVK.DE","TKA.DE", 
         "SDF.DE", "HLE.DE", "AFX.DE", "HOT.DE", "NDX1.DE", "JEN.DE", "AIXA.DE", "HBH.DE", "DUE.DE", 
         "EVT.DE", "BOSS.DE", "BC8.DE", "WAF.DE", "FPE3.DE", "FNTN.DE", "BVB.DE", "GXI.DE", "PAT.DE", 
         "UTDI.DE", "1U1.DE", "SMHN.DE", "PBB.DE", "GFT.DE", "O2D.HM", "ADV.DE", "ETS.VI", "LXS.DE", 
-        "JUN3.DE", "KRN.DE", "GBF.DE", "HDD.DE", "AM3D.DE", "GLJ.DE", "PSM.DE", "NOEJ.DE", 
+        "JUN3.DE", "KRN.DE", "GBF.DE", "HDD.DE", "GLJ.DE", "PSM.DE", "NOEJ.DE", 
         
     ]
     us_list = [
