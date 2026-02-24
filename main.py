@@ -13,14 +13,13 @@ CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 if GEMINI_KEY:
     genai.configure(api_key=GEMINI_KEY)
-    # KORREKTUR: Modellname auf die stabilste API-Version geändert
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    # KORREKTUR: Nutzung der stabilen Modell-Version
+    model = genai.GenerativeModel('gemini-1.5-flash-latest')
 
 def send_telegram_msg(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     payload = {"chat_id": CHAT_ID, "text": message, "parse_mode": "Markdown"}
-    try:
-        requests.post(url, json=payload, timeout=10)
+    try: requests.post(url, json=payload, timeout=10)
     except: pass
 
 # --- 2. TICKER-LISTE ---
@@ -48,21 +47,23 @@ def get_tickers():
 
 # --- 3. SCREENER ---
 def run_sentinel():
-    print(f"🚀 Scan Start: {datetime.now()}")
     all_tickers = get_tickers()
     signals = []
-    failed_count = 0
+    failed = []
 
     for ticker in all_tickers:
         try:
-            # KORREKTUR: Einzel-Download für maximale Stabilität
-            ticker_obj = yf.Ticker(ticker)
-            df = ticker_obj.history(period="60d")
+            # Einzel-Download mit Retry-Logik
+            t = yf.Ticker(ticker)
+            df = t.history(period="60d")
             
-            if df.empty or len(df) < 30:
-                failed_count += 1
-                continue
-            
+            if df.empty:
+                time.sleep(1) # Kurz warten bei Fehler
+                df = t.history(period="60d")
+                if df.empty:
+                    failed.append(ticker)
+                    continue
+
             close = df['Close'].iloc[-1]
             avg_vol = df['Volume'].rolling(20).mean().iloc[-1]
             current_vol = df['Volume'].iloc[-1]
@@ -72,27 +73,22 @@ def run_sentinel():
             if rel_vol > 1.5 and close > sma_50:
                 signals.append({'Ticker': ticker, 'Price': round(close, 2), 'Vol': round(rel_vol, 1)})
             
-            # Kurze Pause, um Yahoo nicht zu reizen
-            time.sleep(0.2)
+            time.sleep(0.1) # Yahoo nicht überlasten
         except:
-            failed_count += 1
-            continue
+            failed.append(ticker)
 
-    if signals:
-        for s in signals:
-            try:
-                # KORREKTUR: Stabilerer KI-Prompt
-                prompt = f"Analysiere kurz {s['Ticker']}. Volumen heute {s['Vol']}x höher als normal. Nenne den Hauptgrund oder die Chartlage in 1-2 Sätzen Deutsch."
-                response = model.generate_content(prompt)
-                ki_text = response.text.strip()
-                
-                msg = f"🎯 *SIGNAL: {s['Ticker']}*\n💰 Preis: {s['Price']}€\n📊 Vol: {s['Vol']}x\n🤖 KI: {ki_text}"
-                send_telegram_msg(msg)
-            except Exception as e:
-                print(f"KI Fehler: {e}")
-                send_telegram_msg(f"🎯 *SIGNAL: {s['Ticker']}*\n💰 Preis: {s['Price']}€\n📊 Vol: {s['Vol']}x")
-    
-    send_telegram_msg(f"✅ *Sentinel Scan beendet*\n🔢 Geprüft: {len(all_tickers)} Aktien\n❌ Fehler: {failed_count}\n🎯 Signale: {len(signals)}")
+    # Signale verarbeiten
+    for s in signals:
+        try:
+            prompt = f"Aktie {s['Ticker']} hat hohes Volumen ({s['Vol']}x). Warum? Antworte in 1-2 Sätzen auf Deutsch."
+            response = model.generate_content(prompt)
+            ki_msg = response.text.strip()
+            msg = f"🎯 *SIGNAL: {s['Ticker']}*\n💰 Preis: {s['Price']}€\n📊 Vol: {s['Vol']}x\n🤖 KI: {ki_msg}"
+            send_telegram_msg(msg)
+        except Exception as e:
+            send_telegram_msg(f"🎯 *SIGNAL: {s['Ticker']}*\n💰 Preis: {s['Price']}€\n📊 Vol: {s['Vol']}x\n(KI Analyse fehlgeschlagen)")
+
+    send_telegram_msg(f"✅ *Sentinel Scan beendet*\n🔢 Geprüft: {len(all_tickers)}\n❌ Fehler: {len(failed)}\n🎯 Signale: {len(signals)}")
 
 if __name__ == "__main__":
     run_sentinel()
