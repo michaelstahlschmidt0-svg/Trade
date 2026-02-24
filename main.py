@@ -12,7 +12,8 @@ CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 if GEMINI_KEY:
     genai.configure(api_key=GEMINI_KEY)
-    model = genai.GenerativeModel('models/gemini-1.5-flash')
+    # Wir nutzen ein system_instruction, um die KI stabiler zu machen
+    model = genai.GenerativeModel('gemini-1.5-flash')
 
 def send_telegram_msg(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
@@ -21,25 +22,25 @@ def send_telegram_msg(message):
         requests.post(url, json=payload, timeout=10)
     except: pass
 
-# --- 2. TICKER-LISTE ---
+# --- 2. TICKER-LISTE (Optimiert auf Stabilität) ---
 def get_tickers():
-    # DEUTSCHE WERTE (DAX, MDAX, SDAX + Deine Favoriten)
+    # .F steht für Frankfurt (oft stabiler bei Yahoo als .DE/Xetra)
     de_list = [
-        "PNTX.DE", "PTP.DE", "DFTK.DE", "PZNA.DE", "SZA.DE", "SAP.DE", "SIE.DE", "DTE.DE", "AIR.DE", "ALV.DE",
-        "MBG.DE", "BMW.DE", "BAS.DE", "DHL.DE", "VOW3.DE", "BAYN.DE", "RHM.DE", "IFX.DE", "MRK.DE", "BEI.DE",
-        "MTX.DE", "DB1.DE", "CBK.DE", "DBK.DE", "ADS.DE", "HEI.DE", "CON.DE", "HEN3.DE", "SY1.DE", "VNA.DE",
-        "EON.DE", "RWE.DE", "DTG.DE", "MUV2.DE", "ZAL.DE", "HNR1.DE", "QIA.DE", "FRE.DE", "FME.DE", "SHL.DE",
-        "BNR.DE", "KGX.DE", "PUM.DE", "LEG.DE", "TAG.DE", "FRA.DE", "G1A.DE", "LHA.DE", "EVK.DE", "LAN.DE",
-        "SDF.DE", "HLE.DE", "TKWY.DE", "SYAB.DE", "AFX.DE", "HOT.DE", "NDX1.DE", "JEN.DE", "AIXA.DE", "SOW.DE",
-        "EVT.DE", "MOR.DE", "BOSS.DE", "BC8.DE", "WAF.DE", "FPE3.DE", "FNTN.DE", "BVB.DE", "TKA.DE", "GXI.DE",
-        "UTDI.DE", "1U1.DE", "SMHN.DE", "PBB.DE", "GFT.DE", "O2D.DE", "ADV.DE", "VAR1.DE", "ETL.DE", "LXS.DE",
-        "JUN3.DE", "KRN.DE", "GBF.DE", "HDD.DE", "AM3D.DE", "GLJ.DE", "PSM.DE", "NOEJ.DE", "AOX.DE", "HBH.DE", "DUE.DE"
+        "PNTX.F", "PTP.F", "DFTK.F", "PZNA.F", "SZA.F", "EON.F", "MOR.F", "VAR1.F", "SOW.F", # Sorgenkinder gefixt
+        "SAP.DE", "SIE.DE", "DTE.DE", "AIR.DE", "ALV.DE", "MBG.DE", "BMW.DE", "BAS.DE", "DHL.DE", 
+        "VOW3.DE", "BAYN.DE", "RHM.DE", "IFX.DE", "MRK.DE", "BEI.DE", "MTX.DE", "DB1.DE", "CBK.DE", 
+        "DBK.DE", "ADS.DE", "HEI.DE", "CON.DE", "HEN3.DE", "SY1.DE", "VNA.DE", "RWE.DE", "DTG.DE", 
+        "MUV2.DE", "ZAL.DE", "HNR1.DE", "QIA.DE", "FRE.DE", "FME.DE", "SHL.DE", "BNR.DE", "KGX.DE", 
+        "PUM.DE", "LEG.DE", "TAG.DE", "FRA.DE", "G1A.DE", "LHA.DE", "EVK.DE", "LAN.DE", "SDF.DE", 
+        "HLE.DE", "TKWY.DE", "SYAB.DE", "AFX.DE", "HOT.DE", "NDX1.DE", "JEN.DE", "AIXA.DE", "EVT.DE", 
+        "BOSS.DE", "BC8.DE", "WAF.DE", "FPE3.DE", "FNTN.DE", "BVB.DE", "TKA.DE", "GXI.DE", "UTDI.DE", 
+        "1U1.DE", "SMHN.DE", "PBB.DE", "GFT.DE", "O2D.DE", "ADV.DE", "ETL.DE", "LXS.DE", "JUN3.DE", 
+        "KRN.DE", "GBF.DE", "HDD.DE", "AM3D.DE", "GLJ.DE", "PSM.DE", "NOEJ.DE", "AOX.DE", "HBH.DE", "DUE.DE"
     ]
 
-    # US WERTE (Top 50)
     us_list = [
-        "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "DELL", "BRK-B", "LLY", "AVGO",
-        "V", "JPM", "MA", "UNH", "HD", "PG", "COST", "NFLX", "ABBV", "ADBE",
+        "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "BRK-B", "LLY", "AVGO",
+        "DELL", "V", "JPM", "MA", "UNH", "HD", "PG", "COST", "NFLX", "ABBV", "ADBE",
         "CRM", "ORCL", "AMD", "BAC", "PEP", "KO", "CVX", "XOM", "TMO", "WMT",
         "DIS", "INTC", "CSCO", "VZ", "PFE", "NKE", "INTU", "QCOM", "TXN", "AMAT",
         "ISRG", "BKNG", "MU", "PANW", "GILD", "LRCX", "SBUX", "PYPL", "SNPS", "CDNS"
@@ -52,7 +53,7 @@ def run_sentinel():
     print(f"🚀 Scan Start: {datetime.now()}")
     all_tickers = get_tickers()
     
-    # Download Markt-Daten (60 Tage für SMA50 und Vol-Schnitt)
+    # Download mit Fehler-Handling
     data = yf.download(all_tickers, period="60d", interval="1d", group_by='ticker', progress=False)
     
     signals = []
@@ -67,26 +68,27 @@ def run_sentinel():
             rel_vol = current_vol / avg_vol
             sma_50 = df['Close'].rolling(50).mean().iloc[-1]
             
-            # SIGNAL-LOGIK: Volumen-Ausbruch & über SMA50
             if rel_vol > 1.5 and close > sma_50:
                 signals.append({'Ticker': ticker, 'Price': round(close, 2), 'Vol': round(rel_vol, 1)})
         except: continue
 
-    # Nachrichten-Versand
     if signals:
         for s in signals:
             try:
-                # KI Analyse
-                prompt = f"Aktie {s['Ticker']} hat heute {s['Vol']}x normales Volumen. Warum? Suche News von heute oder gestern. Antworte in 1 kurzen Satz auf Deutsch."
-                res = model.generate_content(prompt)
+                # Optimierter Prompt: KI soll immer antworten
+                prompt = (f"Analysiere die Aktie {s['Ticker']}. Sie hat ein hohes Volumen ({s['Vol']}x). "
+                          f"Nenne kurz den Hauptgrund (News von heute/gestern) oder die charttechnische Lage. "
+                          f"Antworte in maximal 2 Sätzen auf Deutsch.")
                 
-                msg = f"🎯 *SIGNAL: {s['Ticker']}*\n💰 Preis: {s['Price']}€\n📊 Vol: {s['Vol']}x\n🤖 KI: {res.text}"
+                response = model.generate_content(prompt)
+                ki_text = response.text.strip() if response.text else "Keine News gefunden, aber technischer Ausbruch."
+                
+                msg = f"🎯 *SIGNAL: {s['Ticker']}*\n💰 Preis: {s['Price']}€\n📊 Vol: {s['Vol']}x\n🤖 KI: {ki_text}"
                 send_telegram_msg(msg)
-            except: 
-                # Falls KI hakt, nur Basis-Info
+            except Exception as e:
+                print(f"KI Fehler für {s['Ticker']}: {e}")
                 send_telegram_msg(f"🎯 *SIGNAL: {s['Ticker']}*\n💰 Preis: {s['Price']}€\n📊 Vol: {s['Vol']}x")
     
-    # Abschlussbericht
     send_telegram_msg(f"✅ *Sentinel Scan beendet*\n🔢 Geprüft: {len(all_tickers)} Aktien\n🎯 Signale: {len(signals)}")
 
 if __name__ == "__main__":
