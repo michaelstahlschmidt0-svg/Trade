@@ -48,7 +48,11 @@ def get_tickers():
     final_list = list(set(de_list + us_list))
     
     # Ab hier versuchen wir zusätzlich Wikipedia zu laden
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+    # Ersetze den alten headers-Eintrag durch diesen hier:
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Language': 'de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7'
+    }
     
     # ... der Rest des Codes mit der for-Schleife über die indices folgt hier ...
     indices = {
