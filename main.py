@@ -1,20 +1,13 @@
 import os
 import yfinance as yf
 import pandas as pd
-import google.generativeai as genai
 import requests
 from datetime import datetime
 import time
 
 # --- 1. KONFIGURATION ---
-GEMINI_KEY = os.getenv("GEMINI_API_KEY")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-
-if GEMINI_KEY:
-    genai.configure(api_key=GEMINI_KEY)
-    # KORREKTUR: Wir nutzen nun die absolut stabile Version
-    model = genai.GenerativeModel('gemini-1.5-flash-latest')
 
 def send_telegram_msg(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
@@ -53,7 +46,6 @@ def run_sentinel():
 
     for ticker in all_tickers:
         try:
-            # Nutze history() mit Fehlerabfang
             t = yf.Ticker(ticker)
             df = t.history(period="60d")
             
@@ -67,26 +59,28 @@ def run_sentinel():
             rel_vol = current_vol / avg_vol
             sma_50 = df['Close'].rolling(50).mean().iloc[-1]
             
+            # Signal-Logik: Relatives Volumen > 1.5x und Kurs über SMA 50
             if rel_vol > 1.5 and close > sma_50:
                 signals.append({'Ticker': ticker, 'Price': round(close, 2), 'Vol': round(rel_vol, 1)})
             
             time.sleep(0.1) 
-        except Exception:
+        except:
             failed.append(ticker)
 
     for s in signals:
-        try:
-            # Prompt für Gemini 1.5 Flash optimiert
-            prompt = f"Warum bewegt sich die Aktie {s['Ticker']}? Suche nach News oder analysiere kurz den Chart. Antworte kurz (max 2 Sätze) auf Deutsch."
-            # Expliziter Aufruf über die Google Generative AI Library
-            response = model.generate_content(prompt)
-            ki_msg = response.text.strip()
-            msg = f"🎯 *SIGNAL: {s['Ticker']}*\n💰 Preis: {s['Price']}€\n📊 Vol: {s['Vol']}x\n🤖 KI: {ki_msg}"
-            send_telegram_msg(msg)
-        except Exception:
-            send_telegram_msg(f"🎯 *SIGNAL: {s['Ticker']}*\n💰 Preis: {s['Price']}€\n📊 Vol: {s['Vol']}x\n(KI Analyse aktuell nicht verfügbar)")
+        # Direkter Link zu TradingView für die manuelle News-Prüfung
+        tv_ticker = s['Ticker'].replace(".DE", "").replace(".F", "")
+        msg = (f"🎯 *SIGNAL: {s['Ticker']}*\n"
+               f"💰 Preis: {s['Price']}€\n"
+               f"📊 Vol: {s['Vol']}x\n"
+               f"🔗 [Chart & News (TV)](https://de.tradingview.com/symbols/{tv_ticker}/)")
+        send_telegram_msg(msg)
 
-    send_telegram_msg(f"✅ *Sentinel Scan beendet*\n🔢 Geprüft: {len(all_tickers)}\n❌ Fehler: {len(failed)}\n🎯 Signale: {len(signals)}")
+    summary = (f"✅ *Sentinel Scan beendet*\n"
+               f"🔢 Geprüft: {len(all_tickers)}\n"
+               f"❌ Fehler: {len(failed)}\n"
+               f"🎯 Signale: {len(signals)}")
+    send_telegram_msg(summary)
 
 if __name__ == "__main__":
     run_sentinel()
