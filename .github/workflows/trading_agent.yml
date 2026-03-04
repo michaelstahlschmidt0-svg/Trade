@@ -2,8 +2,8 @@ name: Gemini Market Sentinel 2026
 
 on:
   schedule:
-    - cron: '30 8 * * 1-5'
-    - cron: '30 13 * * 1-5'
+    - cron: '37 8 * * 1-5'
+    - cron: '37 13 * * 1-5'
   workflow_dispatch:
 jobs:
   build:
