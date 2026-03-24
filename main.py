@@ -26,7 +26,7 @@ def get_tickers():
         "KGX.DE", "PUM.DE", "LEG.DE", "FRA.DE", "G1A.DE", "LHA.DE", "EVK.DE","TKA.DE", 
         "SDF.DE", "HLE.DE", "AFX.DE", "HOT.DE", "NDX1.DE", "JEN.DE", "AIXA.DE", "HBH.DE", "DUE.DE", 
         "EVT.DE", "BOSS.DE", "BC8.DE", "WAF.DE", "FPE3.DE", "FNTN.DE", "BVB.DE", "GXI.DE", "PAT.DE", 
-        "UTDI.DE", "1U1.DE", "SMHN.DE", "PBB.DE", "GFT.DE", "O2D.HM", "ADV.DE", "ETS.VI", "LXS.DE", 
+        "UTDI.DE", "1U1.DE", "SMHN.DE", "PBB.DE", "GFT.DE", "O2D.HM", "ETS.VI", "LXS.DE", 
         "JUN3.DE", "KRN.DE", "GBF.DE", "HDD.DE", "GLJ.DE", "PSM.DE", "NOEJ.DE", 
         
     ]
@@ -34,7 +34,7 @@ def get_tickers():
         "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "BRK-B", "LLY", "AVGO",
         "DELL", "V", "JPM", "MA", "UNH", "HD", "PG", "COST", "NFLX", "ABBV", "ADBE",
         "CRM", "ORCL", "AMD", "BAC", "PEP", "KO", "CVX", "XOM", "TMO", "WMT",
-        "DIS", "INTC", "CSCO", "VZ", "PFE", "NKE", "INTU", "QCOM", "TXN", "JTKWY", "AMAT"
+        "DIS", "INTC", "CSCO", "VZ", "PFE", "NKE", "INTU", "QCOM", "TXN", "AMAT"
     ]
     return list(set(de_list + us_list))
 
