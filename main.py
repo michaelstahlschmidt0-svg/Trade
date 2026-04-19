@@ -56,7 +56,7 @@ def get_tickers():
         "LYV", "LMT", "L", "LOW", "LULU", "MTB", "MGM", "MSCI", "MPC", 
         "LH", "LRCX", "LW", "LVS", "EL", "LDOS", "LEN", "LII", "LLY", 
         "KEY", "KEYS", "KMB", "KIM", "KMI", "KHC", "KR", "LKQ", "LHX", 
-        "JPM", "JBL", "J", "JNJ", "KLAC", "KKR", "K", "KVUE", "KDP", 
+        "JPM", "JBL", "J", "JNJ", "KLAC", "KKR", "KVUE", "KDP", 
         "ICE", "IBM", "IFF", "IP", "INTU", "ISRG", "INVH", "IQV", "IRM", 
         "HII", "IEX", "IDXX", "ITW", "INCY", "IR", "PODD", "INTC", "IBKR", 
         "HD", "HON", "HRL", "HST", "HWM", "HUBB", "HUM", "JBHT", "HBAN", 
